@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRASS SNAKER</title>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1 id="gameTitle">GRASS SNAKER</h1>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+  </div>
+  <div id="scoreBoard">
+    Score: <span id="score">0</span> | High Score: <span id="highScore">0</span>
+  </div>
+  <div id="controls">
+    <img id="pauseBtn" src="start.png" alt="Start" style="cursor: pointer;">
+    <img id="slowBtn" src="slow.png" alt="Slow" style="cursor: pointer;">
+    <img id="normalBtn" src="normal.png" alt="Normal" style="cursor: pointer;">
+    <img id="fastBtn" src="fast.png" alt="Fast" style="cursor: pointer;">
+  </div>
+  <div id="gameOverScreen" style="display: none;">
+    <h2>Game Over!</h2>
+    <p>Your Score: <span id="finalScore"></span></p>
+    <img id="restartBtn2" src="start.png" alt="Restart" style="cursor: pointer;">
+  </div>
+  <div id="credits">
+    Developed by: Christopher J. Teuton<br>
+    Produced by: DogTree Studios<br>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
