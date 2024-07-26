@@ -8,19 +8,63 @@ const DIRECTIONS = {
   LEFT: 'left',
   RIGHT: 'right',
 };
+const FRUIT_TYPES = {
+  NORMAL: 'normal',
+  CHERRY: 'cherry',
+  BLUEBERRY: 'blueberry',
+};
+const FRUIT_PROBABILITIES = {
+  NORMAL: 0.7,
+  CHERRY: 0.2,
+  BLUEBERRY: 0.1,
+};
+
+// Array of fun facts
+const funFacts = [
+  "Snakes can smell with their tongues.",
+  "The longest snake in the world is the reticulated python.",
+  "Snakes shed their skin to allow for further growth.",
+  "Snakes are found on every continent except Antarctica.",
+  "Some snakes can go without food for months.",
+  "Snakes have no eyelids.",
+  "The venom of the inland taipan can kill 100 adult humans.",
+  "Snakes are cold-blooded animals.",
+  "The smallest snake in the world is the thread snake.",
+  "Snakes use their forked tongues to detect chemicals in the air.",
+"Some snakes can glide through the air, like the flying snake.",
+"There are over 3,000 species of snakes worldwide.",
+"Snakes do not have external ears; they hear through vibrations in their jawbones.",
+"The black mamba can reach speeds of up to 12 miles per hour.",
+"Snakes can dislocate their jaws to swallow prey larger than their head.",
+"The king cobra is the world's longest venomous snake.",
+"Snakes have flexible skulls that allow them to consume large prey.",
+"Anacondas are the heaviest snakes in the world.",
+"Snakes' eyes are always open as they do not have eyelids.",
+"The hognose snake can play dead to avoid predators.",
+"Some sea snakes can breathe partially through their skin.",
+"Snakes use their scales to help them move.",
+"The gaboon viper has the longest fangs of any snake, measuring up to 2 inches.",
+"Rattlesnakes can control the amount of venom they inject.",
+"The boa constrictor kills its prey by constriction, not venom.",
+"Some snakes give birth to live young instead of laying eggs.",
+"Snakes can enter a state of brumation, similar to hibernation.",
+"The milk snake mimics the coloration of the venomous coral snake.",
+"Snakes have a unique organ called Jacobson's organ for detecting scent particles.",
+"The copperhead snake can give off a cucumber-like smell when threatened."
+];
 
 // Game variables
 let snake;
-let fruits; // Change the fruit variable to an array to store multiple fruits
+let fruits;
 let score;
 let highScore;
 let direction;
 let gameInterval;
-let backgroundImage; // Store the background image
-let fruitImage; // Store the fruit image
-let snakeImage; // Store the snake image
+let backgroundImage;
+let fruitImages = {};
+let snakeImage;
 let isPaused = true;
-let difficulty = 75; // Default difficulty (normal speed)
+let difficulty = 75;
 
 // Get canvas context
 const gameCanvas = document.getElementById('gameCanvas');
@@ -29,7 +73,7 @@ const ctx = gameCanvas.getContext('2d');
 // Initialize the game
 function init() {
   snake = [{ x: 10, y: 10 }];
-  fruits = generateFruits(2); // Generate two fruits at the start of the game
+  fruits = generateFruits(2);
   score = 0;
   highScore = parseInt(localStorage.getItem('highScore')) || 0;
   direction = DIRECTIONS.RIGHT;
@@ -38,28 +82,34 @@ function init() {
   backgroundImage = new Image();
   backgroundImage.src = 'snakeBKG.jpg';
 
-  // Load the fruit image
-  fruitImage = new Image();
-  fruitImage.src = 'fruit.png';
+  // Load the fruit images
+  fruitImages[FRUIT_TYPES.NORMAL] = new Image();
+  fruitImages[FRUIT_TYPES.NORMAL].src = 'fruit.png';
+
+  fruitImages[FRUIT_TYPES.CHERRY] = new Image();
+  fruitImages[FRUIT_TYPES.CHERRY].src = 'cherry.png';
+
+  fruitImages[FRUIT_TYPES.BLUEBERRY] = new Image();
+  fruitImages[FRUIT_TYPES.BLUEBERRY].src = 'berry.png';
 
   // Load the snake image
   snakeImage = new Image();
   snakeImage.src = 'ball.png';
 
   // Start the game loop once all images are loaded
-  Promise.all([
-    new Promise((resolve) => {
-      backgroundImage.addEventListener('load', resolve);
-    }),
-    new Promise((resolve) => {
-      fruitImage.addEventListener('load', resolve);
-    }),
-    new Promise((resolve) => {
-      snakeImage.addEventListener('load', resolve);
-    }),
-  ]).then(() => {
-    draw(); // Draw the initial state of the game
-  });
+  Promise.all(
+    Object.values(fruitImages).map((image) => {
+      return new Promise((resolve) => {
+        image.addEventListener('load', resolve);
+      });
+    })
+  )
+    .then(() => {
+      draw();
+    })
+    .catch((error) => {
+      console.error('Error loading images:', error);
+    });
 
   document.getElementById('score').innerText = score;
   document.getElementById('highScore').innerText = highScore;
@@ -75,8 +125,8 @@ function gameLoop() {
 
 // Update game state
 function update() {
-  // Move snake
   const head = { x: snake[0].x, y: snake[0].y };
+
   switch (direction) {
     case DIRECTIONS.UP:
       head.y -= 1;
@@ -100,16 +150,31 @@ function update() {
     head.y >= CANVAS_HEIGHT / GRID_SIZE ||
     snake.some((part, index) => index !== 0 && part.x === head.x && part.y === head.y)
   ) {
-    clearInterval(gameInterval);
-    document.getElementById('gameOverScreen').style.display = 'block';
-    document.getElementById('finalScore').innerText = score;
+    gameOver();
     return;
   }
 
   // Check for fruit collision
   let fruitIndex = fruits.findIndex((fruit) => fruit.x === head.x && fruit.y === head.y);
   if (fruitIndex !== -1) {
-    score += 10;
+    const fruit = fruits[fruitIndex];
+    switch (fruit.type) {
+      case FRUIT_TYPES.NORMAL:
+        score += 10;
+        snake.push({ ...snake[snake.length - 1] });
+        break;
+      case FRUIT_TYPES.CHERRY:
+        score += 10;
+        for (let i = 0; i < 3; i++) {
+          snake.push({ ...snake[snake.length - 1] });
+        }
+        break;
+      case FRUIT_TYPES.BLUEBERRY:
+        score += 25;
+        snake.push({ ...snake[snake.length - 1] });
+        break;
+    }
+
     highScore = Math.max(highScore, score);
     localStorage.setItem('highScore', highScore);
     document.getElementById('score').innerText = score;
@@ -126,23 +191,33 @@ function update() {
 
 // Draw game objects
 function draw() {
-  // Draw background image
   ctx.drawImage(backgroundImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // Draw snake using the snake image
   snake.forEach((part) => {
     ctx.drawImage(snakeImage, part.x * GRID_SIZE, part.y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
   });
 
-  // Draw fruits using the fruit image
   fruits.forEach((fruit) => {
-    ctx.drawImage(fruitImage, fruit.x * GRID_SIZE, fruit.y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+    ctx.drawImage(
+      fruitImages[fruit.type],
+      fruit.x * GRID_SIZE,
+      fruit.y * GRID_SIZE,
+      GRID_SIZE,
+      GRID_SIZE
+    );
   });
 }
 
-// Generate a single fruit at a random position
+// Generate a single fruit at a random position with a random type
 function generateFruit() {
+  const type = Math.random() < FRUIT_PROBABILITIES.NORMAL
+    ? FRUIT_TYPES.NORMAL
+    : Math.random() < FRUIT_PROBABILITIES.CHERRY + FRUIT_PROBABILITIES.NORMAL
+    ? FRUIT_TYPES.CHERRY
+    : FRUIT_TYPES.BLUEBERRY;
+
   return {
+    type,
     x: Math.floor(Math.random() * (CANVAS_WIDTH / GRID_SIZE)),
     y: Math.floor(Math.random() * (CANVAS_HEIGHT / GRID_SIZE)),
   };
@@ -233,6 +308,19 @@ document.getElementById('fastBtn').addEventListener('click', () => {
   clearInterval(gameInterval);
   gameInterval = setInterval(gameLoop, difficulty);
 });
+
+// Function to get a random fun fact
+function getRandomFunFact() {
+  return funFacts[Math.floor(Math.random() * funFacts.length)];
+}
+
+// Handle game over
+function gameOver() {
+  clearInterval(gameInterval);
+  document.getElementById('gameOverScreen').style.display = 'block';
+  document.getElementById('finalScore').innerText = score;
+  document.getElementById('funFact').innerText = getRandomFunFact(); // Display a random fun fact
+}
 
 // Initialize the game
 init();
